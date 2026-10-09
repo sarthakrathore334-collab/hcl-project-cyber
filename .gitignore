@@ -1,0 +1,6 @@
+*.pptx
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+logs.txt

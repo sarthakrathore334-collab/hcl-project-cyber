@@ -1,0 +1,170 @@
+Input: <script>
+Status: XSS Detected
+Pattern: <script
+------------------------------
+Input: <script>
+Status: XSS Detected
+Pattern: <script
+------------------------------
+Input: <script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>alert(1)</script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>alert<script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script> chutgot</script>
+<script>ckaude mc hai gemini achha hai </script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>alert(1)</script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: onerror=
+Status: XSS Detected
+Pattern: onerror=
+Severity: Medium
+------------------------------
+Input: <script>alert(1)</script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: onerror=
+Status: XSS Detected
+Pattern: onerror=
+Severity: Medium
+------------------------------
+Input: <script
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>alert(1)
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>alert(1)</script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: <script>alert('XSS')</script>
+Status: XSS Detected
+Pattern: <script
+Severity: High
+------------------------------
+Input: javascript:void(document.cookie)
+Status: XSS Detected
+Pattern: javascript:
+Severity: High
+------------------------------
+Input: <img src=x onerror=alert('Reflected')>
+Status: XSS Detected
+Pattern: onerror=
+Severity: Medium
+------------------------------
