@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="XSS Guard — Scan authorized endpoints for reflected XSS vulnerabilities.">
+    <title>XSS Guard — Scanner</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            var t = localStorage.getItem('xss-theme');
+            if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #F7F5F0;
+            --surface: #FFFFFF;
+            --surface-alt: #F0EDE6;
+            --border: #E3DED5;
+            --border-focus: #C4BDB1;
+            --text: #1C1917;
+            --text-secondary: #57534E;
+            --text-muted: #A8A29E;
+            --accent: #92400E;
+            --danger-bg: #FDF2F0;
+            --danger-border: #E8CFC9;
+            --danger-text: #991B1B;
+            --safe-bg: #F0F5F0;
+            --safe-border: #C9D8C9;
+            --safe-text: #166534;
+            --radius: 10px;
+        }
+
+        [data-theme="dark"] {
+            --bg: #1A1816;
+            --surface: #242220;
+            --surface-alt: #2E2B28;
+            --border: #3A3633;
+            --border-focus: #524E49;
+            --text: #E7E2DB;
+            --text-secondary: #A8A29E;
+            --text-muted: #6B6560;
+            --accent: #C8956C;
+            --danger-bg: #2D1F1F;
+            --danger-border: #4A2E2E;
+            --danger-text: #E8847A;
+            --safe-bg: #1E2A1E;
+            --safe-border: #2E452E;
+            --safe-text: #6EBF6E;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', -apple-system, system-ui, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        nav {
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 clamp(20px, 5vw, 64px);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Source Serif 4', Georgia, serif;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: -0.01em;
+            transition: opacity 0.15s ease;
+        }
+
+        .brand:hover {
+            opacity: 0.85;
+        }
+
+        .brand-mark {
+            width: 32px;
+            height: 32px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .brand:hover .brand-mark {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .brand-logo-svg {
+            width: 19px;
+            height: 19px;
+            display: block;
+        }
+
+        .nav-right { display: flex; align-items: center; gap: 6px; }
+        .nav-links { display: flex; gap: 2px; }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .nav-links a:hover { color: var(--text-secondary); }
+        .nav-links a.active { color: var(--text); background: var(--surface-alt); }
+
+        .theme-toggle {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: all 0.15s;
+            margin-left: 8px;
+            color: var(--text-muted);
+        }
+
+        .theme-toggle:hover { border-color: var(--border-focus); color: var(--text); }
+        .theme-toggle svg { width: 15px; height: 15px; }
+        .icon-moon, .icon-sun { display: block; }
+        [data-theme="dark"] .icon-moon { display: none; }
+        :not([data-theme="dark"]) .icon-sun { display: none; }
+
+        main {
+            max-width: 660px;
+            margin: 0 auto;
+            padding: 60px 20px 100px;
+        }
+
+        .overline {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-family: 'Source Serif 4', Georgia, serif;
+            font-size: 36px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            line-height: 1.15;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.65;
+            max-width: 520px;
+        }
+
+        .panel {
+            margin-top: 36px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .fields {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            height: 42px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            padding: 0 12px;
+            font: 14px 'DM Sans', sans-serif;
+            outline: none;
+            transition: border-color 0.15s, background 0.3s ease;
+        }
+
+        input::placeholder { color: var(--text-muted); }
+        input:focus { border-color: var(--border-focus); }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 7px;
+            padding: 9px 18px;
+            font: 500 13px 'DM Sans';
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-primary { background: var(--text); color: var(--bg); }
+        .btn-primary:hover { opacity: 0.85; }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover { background: var(--surface-alt); }
+
+        .progress {
+            margin-top: 16px;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .progress.show { opacity: 1; max-height: 50px; }
+
+        .progress-track {
+            height: 3px;
+            background: var(--surface-alt);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background: var(--accent);
+            border-radius: 10px;
+            transition: width 0.25s ease;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .progress-steps span.done { color: var(--accent); }
+
+        .result {
+            margin-top: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .result-title {
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-size: 10px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .badge.high { background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border); }
+        .badge.medium { background: #FDF8EE; color: #92400E; border: 1px solid #E5D5B8; }
+        .badge.low { background: var(--safe-bg); color: var(--safe-text); border: 1px solid var(--safe-border); }
+        .badge.none { background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); }
+
+        [data-theme="dark"] .badge.medium { background: #342C1E; color: #D4A054; border: 1px solid #4A3D28; }
+
+        .result-meta {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .snippet {
+            margin-top: 12px;
+            padding: 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font: 12px/1.6 monospace;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 160px;
+            overflow: auto;
+        }
+
+        @media (max-width: 600px) {
+            main { padding: 36px 16px 60px; }
+            h1 { font-size: 28px; }
+            .fields { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/" class="brand">
+        <span class="brand-mark">
+            <svg class="brand-logo-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2.5L4.75 6V11.5C4.75 16.4 7.85 20.7 12 22C16.15 20.7 19.25 16.4 19.25 11.5V6L12 2.5Z" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9.5 10.25L7.75 12L9.5 13.75" stroke="var(--text)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M14.5 10.25L16.25 12L14.5 13.75" stroke="var(--text)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M13 9.25L11 14.75" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round"/>
+            </svg>
+        </span>
+        <span>XSS Guard</span>
+    </a>
+    <div class="nav-right">
+        <div class="nav-links">
+            <a href="/">Detector</a>
+            <a href="/scan" class="active">Scanner</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/learn">Learn</a>
+            <a href="/report">Report</a>
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+    </div>
+</nav>
+
+<main>
+    <div class="overline">Reflection testing</div>
+    <h1>Scan a test endpoint</h1>
+    <p class="subtitle">Enter a URL and query parameter for an authorized test application. The scanner sends a controlled marker and checks how it appears in the response.</p>
+
+    <form method="POST" id="scanForm" class="panel">
+        <div class="fields">
+            <div>
+                <label for="url">Target URL</label>
+                <input type="text" id="url" name="url" value="{{ url }}" placeholder="http://127.0.0.1:5001/search" autocomplete="off">
+            </div>
+            <div>
+                <label for="parameter">Parameter</label>
+                <input type="text" id="parameter" name="parameter" value="{{ parameter }}" placeholder="q" autocomplete="off">
+            </div>
+        </div>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary" id="scanBtn">Run scan</button>
+            <button type="button" class="btn btn-secondary" id="fillBtn">Use local test</button>
+        </div>
+
+        <div class="progress" id="progress">
+            <div class="progress-track"><div class="progress-bar" id="bar"></div></div>
+            <div class="progress-steps">
+                <span id="s1">Sending probe</span>
+                <span id="s2">Reading response</span>
+                <span id="s3">Classifying</span>
+            </div>
+        </div>
+    </form>
+
+    {% if result %}
+    <div class="result">
+        <div class="result-title">
+            <span>{{ result.message }}</span>
+            <span class="badge {{ result.severity|lower }}">{{ result.severity }}</span>
+        </div>
+        <div class="result-meta">Context: <strong>{{ result.context }}</strong></div>
+        {% if result.snippet %}<div class="snippet">{{ result.snippet }}</div>{% endif %}
+    </div>
+    {% endif %}
+</main>
+
+<script>
+// Theme toggle
+document.getElementById('themeToggle').addEventListener('click', function() {
+    var html = document.documentElement;
+    var isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('xss-theme', 'light');
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        localStorage.setItem('xss-theme', 'dark');
+    }
+});
+
+document.getElementById('fillBtn').addEventListener('click', () => {
+    document.getElementById('url').value = 'http://127.0.0.1:5001/search';
+    document.getElementById('parameter').value = 'q';
+});
+
+const form = document.getElementById('scanForm');
+const bar = document.getElementById('bar');
+const progress = document.getElementById('progress');
+
+form.addEventListener('submit', () => {
+    progress.classList.add('show');
+    const btn = document.getElementById('scanBtn');
+    btn.textContent = 'Scanning...';
+    btn.style.opacity = '0.6';
+    btn.disabled = true;
+
+    let p = 0;
+    const timer = setInterval(() => {
+        p = Math.min(p + 10, 90);
+        bar.style.width = p + '%';
+        if (p >= 25) document.getElementById('s1').classList.add('done');
+        if (p >= 55) document.getElementById('s2').classList.add('done');
+        if (p >= 80) document.getElementById('s3').classList.add('done');
+        if (p >= 90) clearInterval(timer);
+    }, 180);
+});
+</script>
+</body>
+</html>
